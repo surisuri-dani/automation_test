@@ -44,10 +44,10 @@ jobs:
           TEST_HOST: http://localhost # This sets the host for the test script
         run: |
           # Replace placeholder URLs in your Python script with the test host
-          sed -i 's|http://example.com|http://localhost|g' your_test_script.py
+          sed -i 's|http://example.com|http://localhost|g' test_nginx_config.py
 
           # Run the test script
-          python your_test_script.py
+          python test_nginx_config.py
 
       - name: Stop NGINX container
         if: always()
