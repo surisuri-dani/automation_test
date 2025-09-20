@@ -1,0 +1,54 @@
+name: NGINX Configuration Test
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  test_nginx_config:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.x'
+
+      - name: Install dependencies
+        run: pip install requests
+
+      - name: Start NGINX with test config
+        run: |
+          # Create dummy files for the test
+          mkdir -p test_files/images
+          echo "This is a GIF" > test_files/images/existing_image.gif
+          echo "This is a MP4" > test_files/images/video.mp4
+          echo "This is a GIF to be redirected" > test_files/images/video.gif
+
+          # Run a docker container with NGINX and mount the test config
+          docker run --name nginx_test -v ${{ github.workspace }}/nginx.conf:/etc/nginx/nginx.conf -v ${{ github.workspace }}/test_files:/usr/share/nginx/html -p 80:80 -d nginx
+          sleep 5 # Wait for NGINX to start
+
+          # Make sure the nginx.conf file exists and has correct syntax
+          docker exec nginx_test nginx -t
+
+      - name: Run Python tests
+        env:
+          TEST_HOST: http://localhost # This sets the host for the test script
+        run: |
+          # Replace placeholder URLs in your Python script with the test host
+          sed -i 's|http://example.com|http://localhost|g' your_test_script.py
+
+          # Run the test script
+          python your_test_script.py
+
+      - name: Stop NGINX container
+        if: always()
+        run: docker stop nginx_test
